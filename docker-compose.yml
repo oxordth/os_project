@@ -30,6 +30,8 @@ services:
     depends_on:
       opensearch:
         condition: service_healthy
+    healthcheck:
+      test: curl -f http://localhost:5601
 
   logstash:
     build:
@@ -42,12 +44,22 @@ services:
       - ./logstash/config:/usr/share/logstash/config
     ports:
       - "5044:5044"
-      - "9600:9600"
     depends_on:
       opensearch:
         condition: service_healthy
     environment:
       - LS_JAVA_OPTS=-Xms8g -Xmx8g
+
+  setup:
+    image: curlimages/curl:8.14.1
+    container_name: setup
+    depends_on:
+      dashboards:
+        condition: service_healthy
+    volumes:
+      - ./init.sh:/init.sh
+      - ./dashboards.ndjson:/dashboards.ndjson
+    command: sh /init.sh
 
 volumes:
   os-data:
